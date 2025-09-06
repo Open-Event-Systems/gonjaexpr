@@ -79,7 +79,7 @@ func TestLogic(t *testing.T) {
 				panic(err)
 			}
 
-			t.Run(string(buf.Bytes()), func(t *testing.T) { run(t, val.Expression, val.Expected) })
+			t.Run(buf.String(), func(t *testing.T) { run(t, val.Expression, val.Expected) })
 		}
 	}
 }

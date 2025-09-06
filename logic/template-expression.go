@@ -2,7 +2,6 @@ package logic
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/nikolalohinski/gonja/v2/exec"
 	"github.com/nikolalohinski/gonja/v2/nodes"
@@ -42,9 +41,7 @@ func (e *TemplateExpression) Evaluate(ctx *exec.Context) (any, error) {
 		Environment: &env,
 		Loader:      e.eval.Loader,
 	}
-	log.Printf("preerr %v", e.node)
 	resVal := evalWithCtx.Eval(e.node)
-	log.Printf("err %v", resVal.Val)
 	if resVal.IsError() {
 		return nil, resVal.Interface().(error)
 	}
