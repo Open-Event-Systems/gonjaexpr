@@ -1,0 +1,18 @@
+---
+expected: true
+expression: t or f
+---
+expected: false
+expression: t and f
+---
+expected: true
+expression: o == 1
+---
+expected: false
+expression: missing
+---
+expected: false
+expression: missing == 0
+---
+expected: true
+expression: not missing

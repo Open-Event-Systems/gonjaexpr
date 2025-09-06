@@ -1,0 +1,67 @@
+---
+# no/null expression is an empty AND
+expected: true
+---
+expected: false
+expression:
+  and:
+    - false
+    - true
+---
+expected: false
+expression:
+  - false
+  - true
+---
+expected: true
+expression:
+  - true
+  - true
+---
+expected: true
+expression:
+  or:
+    - false
+    - true
+---
+expected: false
+expression:
+  or:
+    - false
+    - false
+---
+expected: false
+expression:
+  or:
+    - false
+    - and:
+      - true
+      - false
+---
+expected: true
+expression:
+  and:
+    - true
+    - or:
+      - true
+      - false
+---
+expected: true
+expression:
+  not:
+    - false
+    - false
+---
+expected: false
+expression:
+  not:
+    - false
+    - true
+---
+expected: false
+expression:
+  not: true
+---
+expected: true
+expression:
+  not: false

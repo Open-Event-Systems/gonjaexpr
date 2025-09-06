@@ -1,45 +1,85 @@
 package logic_test
 
 import (
-	"fmt"
+	"bytes"
+	"io"
+	"os"
 	"testing"
 
 	"github.com/Open-Event-Systems/gonjaexpr/logic"
-
+	"github.com/nikolalohinski/gonja/v2"
 	"github.com/nikolalohinski/gonja/v2/exec"
+	"gopkg.in/yaml.v3"
 )
 
-func TestLogicEval(t *testing.T) {
-	cases := []struct {
-		expr     logic.Evaluable
-		expected any
-	}{
-		{logic.ValueExpr{0}, 0},
-		{logic.ValueExpr{true}, true},
-		{logic.ValueExpr{false}, false},
-		{logic.ValueExpr{"test"}, "test"},
-		{logic.NotExpr{logic.ValueExpr{true}}, false},
-		{logic.NotExpr{logic.ValueExpr{""}}, true},
-		{logic.AndExpr{}, true},
-		{logic.OrExpr{}, false},
-		{logic.AndExpr{[]logic.Evaluable{logic.ValueExpr{true}, logic.ValueExpr{false}}}, false},
-		{logic.AndExpr{[]logic.Evaluable{logic.ValueExpr{true}, logic.ValueExpr{true}}}, true},
-		{logic.OrExpr{[]logic.Evaluable{logic.ValueExpr{true}, logic.ValueExpr{false}}}, true},
-		{logic.OrExpr{[]logic.Evaluable{logic.ValueExpr{false}, logic.ValueExpr{false}}}, false},
+type testCase struct {
+	Expected   bool `yaml:"expected"`
+	Expression any  `yaml:"expression"`
+}
+
+func TestLogic(t *testing.T) {
+	eval := &exec.Evaluator{
+		Config:      gonja.DefaultConfig,
+		Environment: gonja.DefaultEnvironment,
+		Loader:      gonja.DefaultLoader,
 	}
 
-	ctx := exec.NewContext(nil)
+	ctx := exec.NewContext(map[string]interface{}{
+		"t": true,
+		"o": 1,
+		"f": false,
+	})
 
-	for _, testCase := range cases {
-		t.Run(fmt.Sprintf("%v", testCase.expr), func(t *testing.T) {
-			res, err := testCase.expr.Evaluate(ctx)
+	run := func(t *testing.T, value any, expected bool) {
+		parsed, err := logic.ParseBooleanExpression(eval, value)
+		if err != nil {
+			panic(err)
+		}
+
+		res, err := parsed.Evaluate(ctx)
+		if err != nil {
+			panic(err)
+		}
+
+		asBool := logic.ToBoolean(res)
+		if asBool != expected {
+			t.Fatalf("expected %v, got %v", expected, asBool)
+		}
+	}
+
+	entries, err := os.ReadDir("tests")
+	if err != nil {
+		panic(err)
+	}
+
+	for _, entry := range entries {
+		f, err := os.Open("tests/" + entry.Name())
+		if err != nil {
+			panic(err)
+		}
+		defer f.Close()
+
+		dec := yaml.NewDecoder(f)
+
+		for {
+			var val testCase
+			err = dec.Decode(&val)
+			if err == io.EOF {
+				break
+			}
+
 			if err != nil {
 				panic(err)
 			}
 
-			if res != testCase.expected {
-				t.Errorf("expected %v, got %v", testCase.expected, res)
+			buf := bytes.NewBuffer(nil)
+			enc := yaml.NewEncoder(buf)
+			err = enc.Encode(val.Expression)
+			if err != nil {
+				panic(err)
 			}
-		})
+
+			t.Run(string(buf.Bytes()), func(t *testing.T) { run(t, val.Expression, val.Expected) })
+		}
 	}
 }

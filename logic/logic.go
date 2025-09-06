@@ -4,68 +4,62 @@ import (
 	"github.com/nikolalohinski/gonja/v2/exec"
 )
 
-// Something that can be evaluated.
-type Evaluable interface {
-	Evaluate(context *exec.Context) (any, error)
-}
-
-// Literal value.
-type ValueExpr struct {
-	Value any
-}
-
-func (e ValueExpr) Evaluate(context *exec.Context) (any, error) {
-	return e.Value, nil
-}
-
-// Logic OR
-type OrExpr struct {
+type LogicAnd struct {
 	Exprs []Evaluable
 }
 
-func (expr OrExpr) Evaluate(context *exec.Context) (any, error) {
-	for _, e := range expr.Exprs {
-		res, err := e.Evaluate(context)
+func (a *LogicAnd) Evaluate(ctx *exec.Context) (any, error) {
+	for _, expr := range a.Exprs {
+		res, err := expr.Evaluate(ctx)
 		if err != nil {
-			return false, err
-		}
-
-		if ToBoolean(res) {
-			return true, nil
-		}
-	}
-	return false, nil
-}
-
-// Logic AND
-type AndExpr struct {
-	Exprs []Evaluable
-}
-
-func (expr AndExpr) Evaluate(context *exec.Context) (any, error) {
-	for _, e := range expr.Exprs {
-		res, err := e.Evaluate(context)
-		if err != nil {
-			return false, err
+			return nil, err
 		}
 
 		if !ToBoolean(res) {
 			return false, nil
 		}
 	}
+
 	return true, nil
 }
 
-// Logic NOT
-type NotExpr struct {
+type LogicOr struct {
+	Exprs []Evaluable
+}
+
+func (o *LogicOr) Evaluate(ctx *exec.Context) (any, error) {
+	for _, expr := range o.Exprs {
+		res, err := expr.Evaluate(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		if ToBoolean(res) {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+type LogicNot struct {
 	Expr Evaluable
 }
 
-func (expr NotExpr) Evaluate(context *exec.Context) (any, error) {
-	res, err := expr.Expr.Evaluate(context)
+func (n *LogicNot) Evaluate(ctx *exec.Context) (any, error) {
+	res, err := n.Expr.Evaluate(ctx)
 	if err != nil {
-		return false, err
+		return nil, err
 	}
 
 	return !ToBoolean(res), nil
+}
+
+func Evaluate(ctx *exec.Context, value any) (any, error) {
+	switch v := value.(type) {
+	case Evaluable:
+		return v.Evaluate(ctx)
+	default:
+		return v, nil
+	}
 }

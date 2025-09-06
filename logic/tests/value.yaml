@@ -1,0 +1,18 @@
+---
+expected: true
+expression: true
+---
+expected: false
+expression: false
+---
+expected: true
+expression: 1
+---
+expected: false
+expression: 0
+---
+expected: true
+expression: "'0'"
+---
+expected: false
+expression: "''"
